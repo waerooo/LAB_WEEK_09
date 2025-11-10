@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">LAB_WEEK_09</string>
+    <string name="enter_name_hint">Enter a name</string>
+    <string name="submit_button">Submit</string>
+    <string name="finish_button">Finish</string>
 </resources>
