@@ -36,6 +36,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -98,6 +101,14 @@ fun Home(navigateFromHomeToResult: (String) -> Unit) {
     }
     var inputField = remember { mutableStateOf(Student("")) }
 
+    val moshi = remember {
+        Moshi.Builder()
+            .add(KotlinJsonAdapterFactory())
+            .build()
+    }
+    val listType = Types.newParameterizedType(List::class.java, Student::class.java)
+    val adapter = remember { moshi.adapter<List<Student>>(listType) }
+
     HomeContent(
         listData,
         inputField.value,
@@ -109,8 +120,8 @@ fun Home(navigateFromHomeToResult: (String) -> Unit) {
             }
         },
         {
-            val listString = listData.joinToString(",") { it.name }
-            navigateFromHomeToResult(listString)
+            val listJson = adapter.toJson(listData.toList())
+            navigateFromHomeToResult(listJson)
         }
     )
 }
@@ -187,12 +198,35 @@ fun PreviewHome() {
 
 @Composable
 fun ResultContent(listData: String) {
-    Column(
+    val moshi = remember {
+        Moshi.Builder()
+            .add(KotlinJsonAdapterFactory())
+            .build()
+    }
+    val listType = Types.newParameterizedType(List::class.java, Student::class.java)
+    val adapter = remember { moshi.adapter<List<Student>>(listType) }
+
+    val itemsList = remember(listData) {
+        try {
+            adapter.fromJson(listData)
+        } catch (e: Exception) {
+            listOf(Student("Error parsing data"))
+        }
+    }
+
+    LazyColumn(
         modifier = Modifier
-            .padding(vertical = 4.dp)
+            .padding(16.dp)
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        OnBackgroundItemText(text = listData)
+        item {
+            OnBackgroundTitleText(text = "Submitted Names")
+        }
+        if (itemsList != null) {
+            items(itemsList) { item ->
+                OnBackgroundItemText(text = item.name)
+            }
+        }
     }
 }
